@@ -1,0 +1,19 @@
+from collections.abc import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
+from src.config import get_settings
+
+database_url = get_settings().ASYNC_DATABASE_URL
+pool_size = get_settings().DB_POOL_SIZE
+
+engine = create_async_engine(database_url, pool=pool_size, max_overflow=10, pool_pre_ping=True)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+async def get_db() -> AsyncIterator[AsyncSession]:
+    async with async_session_maker() as session:
+        yield session
+
+class Base(DeclarativeBase):
+    pass
