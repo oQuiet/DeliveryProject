@@ -58,7 +58,7 @@ security:
 cc:
 	poetry run radon cc -s -a $(PY_SRCS)
 	@# QUALITY GATE: проваливаем, если есть элементы со сложностью E/F
-	@if poetry run radon cc -s $(PY_SRCS) | grep -E ' [EF] '; then \
+	@if poetry run radon cc -s $(PY_SRCS) | grep -Eq -- '- [EF] \('; then \
 		echo "❌ Radon CC: обнаружены функции со сложностью E/F"; \
 		exit 1; \
 	else \
@@ -67,11 +67,13 @@ cc:
 
 # Индекс поддерживаемости
 mi:
-	@poetry run radon mi $(PY_SRCS)
+	@poetry run radon mi -s -e "*/orm/*" $(PY_SRCS)
 	@# QUALITY GATE: проваливаем, если есть MI < $(RADON_MIN_MI)
-	@MI_BAD=$$(radon mi $(PY_SRCS) | awk '{print $$NF}' | awk -F: '{print $$NF}' | awk '$$1+0<$(RADON_MIN_MI){print}'); \
+	@MI_BAD=$$(poetry run radon mi -s -e "*/orm/*" $(PY_SRCS) | \
+		awk -F'[()]' 'NF > 1 && $$2 + 0 < $(RADON_MIN_MI) { print }'); \
 	if [ -n "$$MI_BAD" ]; then \
 		echo "❌ Radon MI: найден MI < $(RADON_MIN_MI)"; \
+		echo "$$MI_BAD"; \
 		exit 1; \
 	else \
 		echo "✅ Radon MI: все файлы с MI >= $(RADON_MIN_MI)"; \

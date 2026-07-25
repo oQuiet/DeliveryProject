@@ -7,7 +7,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
-dependencies = ["fastapi (>=0.139.2,<0.140.0)", "uvicorn (>=0.51.0,<0.52.0)", "asyncpg (>=0.31.0,<0.32.0)", "sqlalchemy (>=2.0.51,<3.0.0)", "pydantic-settings (>=2.14.2,<3.0.0)"]
+dependencies = ["fastapi (>=0.139.2,<0.140.0)", "uvicorn (>=0.51.0,<0.52.0)", "asyncpg (>=0.31.0,<0.32.0)", "sqlalchemy (>=2.0.51,<3.0.0)", "pydantic-settings (>=2.14.2,<3.0.0)", "alembic (>=1.18.5,<2.0.0)", "psycopg2-binary (>=2.9.12,<3.0.0)"]
 
 [dependency-groups]
 dev = [
@@ -39,7 +39,6 @@ known-first-party = ["app", "src"]
 combine-as-imports = true
 force-sort-within-sections = true
 
-
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -48,9 +47,14 @@ docstring-code-format = true
 
 [tool.mypy]
 python_version = "3.13"
+plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
 warn_unused_configs = true
 check_untyped_defs = true
 disallow_incomplete_defs = true
 no_implicit_optional = true
 
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
