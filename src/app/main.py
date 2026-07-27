@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 
-from src.presentation.routers.parcels import parcelsroute  # noqa: E402, I001
+from app.presentation.routers.parcels import parcelsroute
 
 # if __package__ in {None, ""}:
 #     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

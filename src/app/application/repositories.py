@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.domain.entities import Parcel
+from app.domain.entities import Parcel
 
 
 class ParcelRepository(ABC):

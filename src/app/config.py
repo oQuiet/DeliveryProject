@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
     DB_HOST: str  # type: ignore[call-arg]
-    DB_PORT: int  # type: ignore[call-arg]
+    DB_PORT: str  # type: ignore[call-arg]
     DB_USER: str  # type: ignore[call-arg]
     DB_PASS: str  # type: ignore[call-arg]
     DB_NAME: str  # type: ignore[call-arg]

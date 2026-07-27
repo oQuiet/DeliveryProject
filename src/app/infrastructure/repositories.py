@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.repositories import ParcelRepository
-from src.domain.entities import Parcel
-from src.infrastructure.orm.models import Parcel as ParcelModel
+from app.application.repositories import ParcelRepository
+from app.domain.entities import Parcel
+from app.infrastructure.orm.models import Parcel as ParcelModel
 
 
 class SQLAlchemyParcelRepository(ParcelRepository):

@@ -12,3 +12,9 @@ class Parcel:
     id: int | None = None
     delivery_price_rub: Decimal | None = None
     company_id: int | None = None
+
+
+@dataclass
+class ParcelType:
+    name: str
+    id: int | None = None

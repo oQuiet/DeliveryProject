@@ -1,5 +1,5 @@
-from src.application.repositories import ParcelRepository
-from src.domain.entities import Parcel
+from app.application.repositories import ParcelRepository
+from app.domain.entities import Parcel
 
 
 class ParcelService:

@@ -5,12 +5,12 @@ from fastapi.routing import APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.parcel_service import ParcelService
-from src.domain.entities import Parcel
-from src.infrastructure.database import get_db
-from src.infrastructure.orm.models import ParcelType
-from src.presentation.dependencies import get_parcel_service, get_session_id
-from src.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
+from app.application.parcel_service import ParcelService
+from app.domain.entities import Parcel
+from app.infrastructure.database import get_db
+from app.infrastructure.orm.models import ParcelType
+from app.presentation.dependencies import get_parcel_service, get_session_id
+from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 
 parcelsroute = APIRouter()
 
