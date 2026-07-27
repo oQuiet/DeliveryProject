@@ -1,17 +1,63 @@
-from fastapi import Depends, Request
-from fastapi.routing import APIRouter
+from typing import Annotated
 
-from src.presentation.dependencies import get_session_id
-from src.presentation.shemas.models import ParcelRequest
+from fastapi import Depends, HTTPException, status
+from fastapi.routing import APIRouter
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.application.parcel_service import ParcelService
+from src.domain.entities import Parcel
+from src.infrastructure.database import get_db
+from src.infrastructure.orm.models import ParcelType
+from src.presentation.dependencies import get_parcel_service, get_session_id
+from src.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 
 parcelsroute = APIRouter()
 
 
 @parcelsroute.post("/parcels")
-async def register_parcel(parcel: ParcelRequest, session_id: str = Depends(get_session_id)) -> dict:
-    return {"session_id": session_id, "parcel": parcel}
+async def register_parcel(
+    parcel_request: ParcelRequest,
+    session_id: Annotated[str, Depends(get_session_id)],
+    service: Annotated[ParcelService, Depends(get_parcel_service)],
+) -> int | None:
+    parcel = Parcel(**parcel_request.model_dump(), session_id=session_id)
+    created = await service.register(parcel)
+    return created.id
 
 
-@parcelsroute.get("/parcels")
-async def get_parcels(request: Request) -> dict:
-    return {"session_id": request.cookies.get("session_id")}
+@parcelsroute.get("/parcels", response_model=list[ParcelResponse])
+async def get_parcels(
+    session_id: Annotated[str, Depends(get_session_id)],
+    service: Annotated[ParcelService, Depends(get_parcel_service)],
+) -> list[ParcelResponse]:
+    parcels = await service.get_all(session_id)
+
+    return [ParcelResponse.model_validate(parcel) for parcel in parcels]
+
+
+@parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
+async def get_parcels_types(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[ParcelTypeResponse]:
+    models = await session.scalars(select(ParcelType))
+    return [ParcelTypeResponse.model_validate(model) for model in models]
+
+
+@parcelsroute.get("/parcels/{parcel_id}")
+async def get_concrete_parcel(
+    parcel_id: int, service: Annotated[ParcelService, Depends(get_parcel_service)]
+) -> ParcelResponse:
+    parcel = await service.get_one(parcel_id)
+
+    if parcel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Посылки с таким id не существует"
+        )
+
+    return ParcelResponse.model_validate(parcel)
+
+
+# @parcelsroute.patch("/parcels/{parcel_id}")
+# async def add_delivery_parcel_company(parcel_id: int) -> :
+#     pass

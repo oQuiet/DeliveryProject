@@ -6,20 +6,19 @@ Create Date: 2026-07-24 11:10:00
 
 """
 
-from typing import Sequence, Union
-from decimal import Decimal
+from collections.abc import Sequence
 from datetime import datetime, timedelta
+from decimal import Decimal
 import uuid
 
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision: str = "9b8d3d4a1c01"
-down_revision: Union[str, Sequence[str], None] = "6c43264be7f5"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "6c43264be7f5"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 parcel_types = sa.table(

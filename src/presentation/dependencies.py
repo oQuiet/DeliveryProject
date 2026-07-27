@@ -1,6 +1,12 @@
+from typing import Annotated
 from uuid import uuid4
 
-from fastapi import Cookie, Response
+from fastapi import Cookie, Depends, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.application import ParcelService
+from src.infrastructure.database import get_db
+from src.infrastructure.repositories import SQLAlchemyParcelRepository
 
 
 def create_session_id(response: Response) -> str:
@@ -12,3 +18,8 @@ def create_session_id(response: Response) -> str:
 
 def get_session_id(response: Response, session_id: str | None = Cookie(default=None)) -> str:
     return session_id if session_id else create_session_id(response)
+
+
+def get_parcel_service(session: Annotated[AsyncSession, Depends(get_db)]) -> ParcelService:
+    repository = SQLAlchemyParcelRepository(session)
+    return ParcelService(repository)

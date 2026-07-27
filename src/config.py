@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = Field(default=10, ge=1, le=50)
     LOG_LEVEL: str  # type: ignore[call-arg]
     MAX_RETRIES: int = 5
+    CURRENCY_URL: str  # type: ignore[call-arg]
 
     CORS_ORIGINS: list[str] = ["*"]
 

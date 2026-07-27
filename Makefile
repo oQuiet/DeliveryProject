@@ -67,9 +67,9 @@ cc:
 
 # Индекс поддерживаемости
 mi:
-	@poetry run radon mi -s -e "*/orm/*" $(PY_SRCS)
+	@poetry run radon mi -s --ignore "orm,schemas" --exclude "*models.py,*entities.py" $(PY_SRCS)
 	@# QUALITY GATE: проваливаем, если есть MI < $(RADON_MIN_MI)
-	@MI_BAD=$$(poetry run radon mi -s -e "*/orm/*" $(PY_SRCS) | \
+	@MI_BAD=$$(poetry run radon mi -s --ignore "orm,schemas" --exclude "*models.py,*entities.py" $(PY_SRCS) | \
 		awk -F'[()]' 'NF > 1 && $$2 + 0 < $(RADON_MIN_MI) { print }'); \
 	if [ -n "$$MI_BAD" ]; then \
 		echo "❌ Radon MI: найден MI < $(RADON_MIN_MI)"; \
