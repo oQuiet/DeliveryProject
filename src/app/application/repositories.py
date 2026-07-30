@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 
 from app.domain.entities import Parcel
 
@@ -12,3 +13,12 @@ class ParcelRepository(ABC):
 
     @abstractmethod
     async def list_by_session(self, session_id: str) -> list[Parcel]: ...
+
+    @abstractmethod
+    async def list_unprocessed(self) -> list[Parcel]: ...
+
+    @abstractmethod
+    async def list_processed(self) -> list[Parcel]: ...
+
+    @abstractmethod
+    async def set_delivery_prices(self, usd_rate: Decimal) -> int | None: ...

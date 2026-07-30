@@ -1,7 +1,10 @@
+from decimal import Decimal
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.repositories import ParcelRepository
+from app.domain.delivery_price import calculate_delivery_price
 from app.domain.entities import Parcel
 from app.infrastructure.orm.models import Parcel as ParcelModel
 
@@ -37,6 +40,34 @@ class SQLAlchemyParcelRepository(ParcelRepository):
     async def get_by_id(self, parcel_id: int) -> Parcel | None:
         package = await self.session.get(ParcelModel, parcel_id)
         return self._to_entity(package) if package else None
+
+    async def list_unprocessed(self) -> list[Parcel]:
+        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
+        unprocessed = (await self.session.scalars(stmt)).all()
+
+        return [self._to_entity(model) for model in unprocessed]
+
+    async def list_processed(self) -> list[Parcel]:
+        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_not(None))
+        processed = (await self.session.scalars(stmt)).all()
+
+        return [self._to_entity(model) for model in processed]
+
+    async def set_delivery_prices(self, usd_rate: Decimal) -> int | None:
+        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
+        models = (await self.session.scalars(stmt)).all()
+
+        if not models:
+            return None
+
+        for model in models:
+            model.delivery_price_rub = calculate_delivery_price(
+                model.weight, model.content_price_usd, usd_rate
+            )
+
+        await self.session.commit()
+
+        return len(models)
 
     @staticmethod
     def _to_entity(model: ParcelModel) -> Parcel:

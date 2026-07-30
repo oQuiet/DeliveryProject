@@ -36,14 +36,6 @@ async def get_parcels(
     return [ParcelResponse.model_validate(parcel) for parcel in parcels]
 
 
-@parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
-async def get_parcels_types(
-    session: Annotated[AsyncSession, Depends(get_db)],
-) -> list[ParcelTypeResponse]:
-    models = await session.scalars(select(ParcelType))
-    return [ParcelTypeResponse.model_validate(model) for model in models]
-
-
 @parcelsroute.get("/parcels/{parcel_id}")
 async def get_concrete_parcel(
     parcel_id: int, service: Annotated[ParcelService, Depends(get_parcel_service)]
@@ -56,6 +48,14 @@ async def get_concrete_parcel(
         )
 
     return ParcelResponse.model_validate(parcel)
+
+
+@parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
+async def get_parcels_types(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[ParcelTypeResponse]:
+    models = await session.scalars(select(ParcelType))
+    return [ParcelTypeResponse.model_validate(model) for model in models]
 
 
 # @parcelsroute.patch("/parcels/{parcel_id}")
