@@ -37,7 +37,7 @@ def upgrade() -> None:
         sa.Column("weight", sa.Numeric(precision=8, scale=3), nullable=False),
         sa.Column("content_price_usd", sa.Numeric(precision=12, scale=2), nullable=False),
         sa.Column("parcel_type_id", sa.Integer(), nullable=False),
-        sa.Column("delivery_price_rub", sa.Numeric(precision=12, scale=2), nullable=True),
+        sa.Column("delivery_price", sa.Numeric(precision=12, scale=2), nullable=True),
         sa.Column("company_id", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),

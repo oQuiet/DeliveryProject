@@ -18,13 +18,13 @@ class ParcelResponse(BaseModel):
     name: str = Field(max_length=255)
     weight: PositiveDecimal
     content_price_usd: PositiveDecimal
-    delivery_price_rub: PositiveDecimal | Literal["Не рассчитано"]
+    delivery_price: PositiveDecimal | Literal["Не рассчитано"]
     company_id: int | Literal["Транспортная компания не указана"]
     parcel_type_id: Literal["Одежда", "Электроника", "Разное"] = Field(
         serialization_alias="parcel_type"
     )
 
-    @field_validator("delivery_price_rub", mode="before")
+    @field_validator("delivery_price", mode="before")
     @classmethod
     def format_delivery_price(cls, value: Decimal | None) -> Decimal | str:
         return "Не рассчитано" if value is None else value

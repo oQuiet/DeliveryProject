@@ -46,7 +46,7 @@ class Parcel(Base):
         nullable=False,
     )
 
-    delivery_price_rub: Mapped[Decimal | None] = mapped_column(
+    delivery_price: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True,
     )

@@ -21,7 +21,7 @@ class SQLAlchemyParcelRepository(ParcelRepository):
             weight=parcel.weight,
             content_price_usd=parcel.content_price_usd,
             parcel_type_id=parcel.parcel_type_id,
-            delivery_price_rub=parcel.delivery_price_rub,
+            delivery_price=parcel.delivery_price,
             company_id=parcel.company_id,
         )
 
@@ -33,6 +33,10 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         return parcel
 
     async def list_by_session(self, session_id: str) -> list[Parcel]:
+        # stmt = (
+        #     select(ParcelModel)
+        #     .where(ParcelModel.session_id == session_id, ParcelModel.parcel_type_id=)
+        # )
         statement = select(ParcelModel).where(ParcelModel.session_id == session_id)
         models = (await self.session.scalars(statement)).all()
 
@@ -43,13 +47,13 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         return self._to_entity(package) if package else None
 
     async def list_unprocessed(self) -> list[Parcel]:
-        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
+        stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_(None))
         unprocessed = (await self.session.scalars(stmt)).all()
 
         return [self._to_entity(model) for model in unprocessed]
 
     async def list_processed(self) -> list[Parcel]:
-        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_not(None))
+        stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_not(None))
         processed = (await self.session.scalars(stmt)).all()
 
         return [self._to_entity(model) for model in processed]
@@ -59,7 +63,7 @@ class SQLAlchemyParcelRepository(ParcelRepository):
             ParcelModel.id,
             ParcelModel.weight,
             ParcelModel.content_price_usd,
-        ).where(ParcelModel.delivery_price_rub.is_(None))
+        ).where(ParcelModel.delivery_price.is_(None))
 
         result = await self.session.execute(select_stmt)
         rows = result.all()
@@ -70,7 +74,7 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         updates = [
             {
                 "id": row.id,
-                "delivery_price_rub": calculate_delivery_price(
+                "delivery_price": calculate_delivery_price(
                     weight=row.weight,
                     content_price_usd=row.content_price_usd,
                     usd_rate=usd_rate,
@@ -89,14 +93,14 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         return len(updates)
 
     # async def set_delivery_prices(self, usd_rate: Decimal) -> int | None:
-    #     stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
+    #     stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_(None))
     #     models = (await self.session.scalars(stmt)).all()
 
     #     if not models:
     #         return None
 
     #     for model in models:
-    #         model.delivery_price_rub = calculate_delivery_price(
+    #         model.delivery_price = calculate_delivery_price(
     #             model.weight,
     #             model.content_price_usd,
     #             usd_rate )
@@ -114,6 +118,6 @@ class SQLAlchemyParcelRepository(ParcelRepository):
             weight=model.weight,
             content_price_usd=model.content_price_usd,
             parcel_type_id=model.parcel_type_id,
-            delivery_price_rub=model.delivery_price_rub,
+            delivery_price=model.delivery_price,
             company_id=model.company_id,
         )

@@ -10,7 +10,7 @@ class Parcel:
     content_price_usd: Decimal
     session_id: str
     id: int | None = None
-    delivery_price_rub: Decimal | None = None
+    delivery_price: Decimal | None = None
     company_id: int | None = None
 
 

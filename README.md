@@ -28,5 +28,8 @@ infrastructure/orm/database.py - для создания подлючения к
 - [] Dockerfile
 - [] DockerCompose
 - [] Тесты
+- [] Добавить status_code для всех роутов
+- [] 
+- [] 
 - [] 
 - [] 
