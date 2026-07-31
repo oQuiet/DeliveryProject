@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.routing import APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,7 @@ from app.infrastructure.database import get_db
 from app.infrastructure.orm.models import ParcelType
 from app.presentation.dependencies import get_parcel_service, get_session_id
 from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
+from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 
 parcelsroute = APIRouter()
 
@@ -30,8 +31,9 @@ async def register_parcel(
 async def get_parcels(
     session_id: Annotated[str, Depends(get_session_id)],
     service: Annotated[ParcelService, Depends(get_parcel_service)],
+    params: Annotated[ParcelQueryParams, Query()],
 ) -> list[ParcelResponse]:
-    parcels = await service.get_all(session_id)
+    parcels = await service.get_all(session_id, params)
 
     return [ParcelResponse.model_validate(parcel) for parcel in parcels]
 

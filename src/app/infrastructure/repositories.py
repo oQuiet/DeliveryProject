@@ -2,11 +2,13 @@ from decimal import Decimal
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.application.repositories import ParcelRepository
 from app.domain.delivery_price import calculate_delivery_price
 from app.domain.entities import Parcel
-from app.infrastructure.orm.models import Parcel as ParcelModel
+from app.infrastructure.orm.models import Parcel as ParcelModel, ParcelType
+from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 
 
 class SQLAlchemyParcelRepository(ParcelRepository):
@@ -32,13 +34,33 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         parcel.id = model.id
         return parcel
 
-    async def list_by_session(self, session_id: str) -> list[Parcel]:
+    async def list_by_session(self, session_id: str, params: ParcelQueryParams) -> list[Parcel]:
         # stmt = (
         #     select(ParcelModel)
         #     .where(ParcelModel.session_id == session_id, ParcelModel.parcel_type_id=)
         # )
-        statement = select(ParcelModel).where(ParcelModel.session_id == session_id)
-        models = (await self.session.scalars(statement)).all()
+        # statement = select(ParcelModel).where(ParcelModel.session_id == session_id)
+        # models = (await self.session.scalars(statement)).all()
+
+        # return [self._to_entity(model) for model in models]
+
+        stmt = (
+            select(ParcelModel)
+            .options(selectinload(ParcelModel.parcel_type))
+            .where(ParcelModel.session_id == session_id)
+        )
+
+        if params.parcel_type is not None:
+            stmt = stmt.join(ParcelModel.parcel_type).where(ParcelType.name.in_(params.parcel_type))
+
+        if params.has_delivery_price is True:
+            stmt = stmt.where(ParcelModel.delivery_price.is_not(None))
+
+        elif params.has_delivery_price is False:
+            stmt = stmt.where(ParcelModel.delivery_price.is_(None))
+
+        stmt = stmt.limit(params.limit).offset(params.offset)
+        models = (await self.session.scalars(stmt)).all()
 
         return [self._to_entity(model) for model in models]
 

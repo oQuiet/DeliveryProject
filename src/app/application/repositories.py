@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 
 from app.domain.entities import Parcel
+from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 
 
 class ParcelRepository(ABC):
@@ -12,7 +13,7 @@ class ParcelRepository(ABC):
     async def get_by_id(self, parcel_id: int) -> Parcel | None: ...
 
     @abstractmethod
-    async def list_by_session(self, session_id: str) -> list[Parcel]: ...
+    async def list_by_session(self, session_id: str, params: ParcelQueryParams) -> list[Parcel]: ...
 
     @abstractmethod
     async def list_unprocessed(self) -> list[Parcel]: ...

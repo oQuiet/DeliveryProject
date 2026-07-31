@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Посылки</title>
+    <style>
+        body { max-width: 700px; margin: 30px auto; padding: 0 15px; font-family: sans-serif; }
+        form { display: grid; gap: 10px; margin-bottom: 30px; }
+        input, select, button { padding: 8px; }
+        pre { padding: 12px; background: #f2f2f2; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Посылки</h1>
+
+    <h2>Фильтр</h2>
+    <form id="filter-form">
+        <label>
+            Тип посылки
+            <select name="parcel_type_id">
+                <option value="">Все</option>
+                <option value="1">Одежда</option>
+                <option value="2">Электроника</option>
+                <option value="3">Разное</option>
+            </select>
+        </label>
+
+        <label>
+            ID транспортной компании
+            <input type="number" name="company_id" min="1">
+        </label>
+
+        <label>
+            Страница
+            <input type="number" name="page" min="1" value="1">
+        </label>
+
+        <label>
+            Количество на странице
+            <input type="number" name="limit" min="1" value="10">
+        </label>
+
+        <button type="submit">Найти</button>
+    </form>
+
+    <h2>Создать посылку</h2>
+    <form id="create-form">
+        <label>
+            Название
+            <input type="text" name="name" maxlength="255" required>
+        </label>
+
+        <label>
+            Вес
+            <input type="number" name="weight" min="0.01" step="0.01" required>
+        </label>
+
+        <label>
+            Стоимость содержимого, USD
+            <input type="number" name="content_price_usd" min="0.01" step="0.01" required>
+        </label>
+
+        <label>
+            Тип посылки
+            <select name="parcel_type_id" required>
+                <option value="1">Одежда</option>
+                <option value="2">Электроника</option>
+                <option value="3">Разное</option>
+            </select>
+        </label>
+
+        <label>
+            ID транспортной компании (необязательно)
+            <input type="number" name="company_id" min="1">
+        </label>
+
+        <button type="submit">Создать</button>
+    </form>
+
+    <h2>Результат</h2>
+    <pre id="result">Здесь появится ответ сервера</pre>
+
+</body>
+</html>
