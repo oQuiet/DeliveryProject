@@ -27,6 +27,7 @@ async def delivery_price_worker() -> None:
     INTERVAL = 300
 
     while True:
+        await asyncio.sleep(INTERVAL)
         try:
             await calculate_delivery_prices_once()
         except asyncio.CancelledError:
@@ -34,7 +35,6 @@ async def delivery_price_worker() -> None:
             raise
         except Exception as e:
             print("Ошибка расчета стоимости доставки", e)
-        await asyncio.sleep(INTERVAL)
 
 
 async def cache_currency_worker() -> None:

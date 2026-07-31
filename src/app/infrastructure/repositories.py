@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.repositories import ParcelRepository
@@ -12,6 +12,7 @@ from app.infrastructure.orm.models import Parcel as ParcelModel
 class SQLAlchemyParcelRepository(ParcelRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+        # self.statement = (select(ParcelModel).options(selectinload(ParcelModel.parcel_type)))
 
     async def add(self, parcel: Parcel) -> Parcel:
         model = ParcelModel(
@@ -53,21 +54,56 @@ class SQLAlchemyParcelRepository(ParcelRepository):
 
         return [self._to_entity(model) for model in processed]
 
-    async def set_delivery_prices(self, usd_rate: Decimal) -> int | None:
-        stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
-        models = (await self.session.scalars(stmt)).all()
+    async def set_delivery_prices(self, usd_rate: Decimal) -> int:
+        select_stmt = select(
+            ParcelModel.id,
+            ParcelModel.weight,
+            ParcelModel.content_price_usd,
+        ).where(ParcelModel.delivery_price_rub.is_(None))
 
-        if not models:
-            return None
+        result = await self.session.execute(select_stmt)
+        rows = result.all()
 
-        for model in models:
-            model.delivery_price_rub = calculate_delivery_price(
-                model.weight, model.content_price_usd, usd_rate
-            )
+        if not rows:
+            return 0
+
+        updates = [
+            {
+                "id": row.id,
+                "delivery_price_rub": calculate_delivery_price(
+                    weight=row.weight,
+                    content_price_usd=row.content_price_usd,
+                    usd_rate=usd_rate,
+                ),
+            }
+            for row in rows
+        ]
+
+        await self.session.execute(
+            update(ParcelModel),
+            updates,
+        )
 
         await self.session.commit()
 
-        return len(models)
+        return len(updates)
+
+    # async def set_delivery_prices(self, usd_rate: Decimal) -> int | None:
+    #     stmt = select(ParcelModel).where(ParcelModel.delivery_price_rub.is_(None))
+    #     models = (await self.session.scalars(stmt)).all()
+
+    #     if not models:
+    #         return None
+
+    #     for model in models:
+    #         model.delivery_price_rub = calculate_delivery_price(
+    #             model.weight,
+    #             model.content_price_usd,
+    #             usd_rate )
+
+    #     await self.session.commit()
+
+    #     return len(models)
 
     @staticmethod
     def _to_entity(model: ParcelModel) -> Parcel:

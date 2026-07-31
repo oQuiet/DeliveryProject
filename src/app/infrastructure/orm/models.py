@@ -66,10 +66,7 @@ class Parcel(Base):
         nullable=False,
     )
 
-    parcel_type = relationship(
-        "ParcelType",
-        back_populates="parcels",
-    )
+    parcel_type = relationship("ParcelType", back_populates="parcels")
 
     __table_args__ = (Index("ix_parcels_session_type", "session_id", "parcel_type_id"),)
 
