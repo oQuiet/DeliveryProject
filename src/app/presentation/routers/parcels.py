@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Query, status
+from fastapi import Body, Depends, HTTPException, Query, status
 from fastapi.routing import APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,14 +52,25 @@ async def get_concrete_parcel(
     return ParcelResponse.model_validate(parcel)
 
 
+@parcelsroute.patch("/parcels/{parcel_id}/company")
+async def add_delivery_parcel_company(
+    parcel_id: int,
+    company_id: Annotated[int, Body(embed=True, gt=0)],
+    service: Annotated[ParcelService, Depends(get_parcel_service)],
+) -> ParcelResponse:
+    parcel = await service.assign_company(parcel_id, company_id)
+    if parcel is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Посылка уже закреплена за другой транспортной компанией",
+        )
+
+    return ParcelResponse.model_validate(parcel)
+
+
 @parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
 async def get_parcels_types(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[ParcelTypeResponse]:
     models = await session.scalars(select(ParcelType))
     return [ParcelTypeResponse.model_validate(model) for model in models]
-
-
-# @parcelsroute.patch("/parcels/{parcel_id}")
-# async def add_delivery_parcel_company(parcel_id: int) -> :
-#     pass

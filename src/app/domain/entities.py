@@ -13,6 +13,12 @@ class Parcel:
     delivery_price: Decimal | None = None
     company_id: int | None = None
 
+    def assign_company(self, company_id: int) -> None:
+        if company_id <= 0:
+            raise ValueError("Id компании должен быть положительным")
+
+        self.company_id = company_id
+
 
 @dataclass
 class ParcelType:

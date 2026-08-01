@@ -34,16 +34,28 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         parcel.id = model.id
         return parcel
 
+    async def save(self, parcel_id: int, company_id: int) -> Parcel | None:
+        stmt = (
+            update(ParcelModel)
+            .where(ParcelModel.company_id.is_(None), ParcelModel.id == parcel_id)
+            .values(company_id=company_id)
+            .returning(ParcelModel)
+        )
+
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            await self.session.rollback()
+            return None
+
+        parcel = self._to_entity(model)
+
+        await self.session.commit()
+
+        return parcel
+
     async def list_by_session(self, session_id: str, params: ParcelQueryParams) -> list[Parcel]:
-        # stmt = (
-        #     select(ParcelModel)
-        #     .where(ParcelModel.session_id == session_id, ParcelModel.parcel_type_id=)
-        # )
-        # statement = select(ParcelModel).where(ParcelModel.session_id == session_id)
-        # models = (await self.session.scalars(statement)).all()
-
-        # return [self._to_entity(model) for model in models]
-
         stmt = (
             select(ParcelModel)
             .options(selectinload(ParcelModel.parcel_type))
@@ -67,18 +79,6 @@ class SQLAlchemyParcelRepository(ParcelRepository):
     async def get_by_id(self, parcel_id: int) -> Parcel | None:
         package = await self.session.get(ParcelModel, parcel_id)
         return self._to_entity(package) if package else None
-
-    async def list_unprocessed(self) -> list[Parcel]:
-        stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_(None))
-        unprocessed = (await self.session.scalars(stmt)).all()
-
-        return [self._to_entity(model) for model in unprocessed]
-
-    async def list_processed(self) -> list[Parcel]:
-        stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_not(None))
-        processed = (await self.session.scalars(stmt)).all()
-
-        return [self._to_entity(model) for model in processed]
 
     async def set_delivery_prices(self, usd_rate: Decimal) -> int:
         select_stmt = select(

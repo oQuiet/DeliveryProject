@@ -16,3 +16,6 @@ class ParcelService:
 
     async def get_one(self, parcel_id: int) -> Parcel | None:
         return await self.repository.get_by_id(parcel_id)
+
+    async def assign_company(self, parcel_id: int, company_id: int) -> Parcel | None:
+        return await self.repository.save(parcel_id, company_id)
