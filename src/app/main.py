@@ -5,7 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
 
-from app.infrastructure.redis import redis_client
+from app.infrastructure.mongo_client import mongo_client
+from app.infrastructure.redis_client import redis_client
 from app.presentation.routers.parcels import parcelsroute
 from app.tasks.delivery_prices import cache_currency_worker, delivery_price_worker
 
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     try:
         yield
     finally:
+        mongo_client.close()
         for task in tasks:
             task.cancel()
 

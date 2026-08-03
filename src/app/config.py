@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, RedisDsn
+from pydantic import AmqpDsn, Field, MongoDsn, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     DB_NAME: str  # type: ignore[call-arg]
 
     REDIS_URL: RedisDsn  # type: ignore[call-arg]
-    RABBIT_URL: str  # type: ignore[call-arg]
+    MONGO_URL: MongoDsn  # type: ignore[call-arg]
+    MONGO_DB_NAME: str  # type: ignore[call-arg]
+    RABBIT_URL: AmqpDsn  # type: ignore[call-arg]
     CURRENCY_URL: str  # type: ignore[call-arg]
 
     DEBUG: bool  # type: ignore[call-arg]

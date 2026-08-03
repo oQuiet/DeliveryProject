@@ -7,7 +7,7 @@ from app.application.delivery_price_service import CalculateDeliveryPriceService
 from app.config import get_settings
 from app.infrastructure.database import async_session_maker
 from app.infrastructure.external.currency_client import CurrencyClient
-from app.infrastructure.redis import redis_client
+from app.infrastructure.redis_client import redis_client
 from app.infrastructure.repositories import SQLAlchemyParcelRepository
 
 
