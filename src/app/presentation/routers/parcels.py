@@ -68,6 +68,14 @@ async def add_delivery_parcel_company(
     return ParcelResponse.model_validate(parcel)
 
 
+# @parcelsroute.get("/parcels/today")
+# async def get_daily_delivery_total(
+#     service: Annotated[CalculateDeliveryPriceService, Depends(get_concrete_parcel)],
+#     parcel_types: Annotated[list[str], Query()]
+#     ) -> Decimal:
+#     sum = await service.get()
+
+
 @parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
 async def get_parcels_types(
     session: Annotated[AsyncSession, Depends(get_db)],

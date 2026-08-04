@@ -14,7 +14,6 @@ from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 class SQLAlchemyParcelRepository(ParcelRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        # self.statement = (select(ParcelModel).options(selectinload(ParcelModel.parcel_type)))
 
     async def add(self, parcel: Parcel) -> Parcel:
         model = ParcelModel(
@@ -80,56 +79,32 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         package = await self.session.get(ParcelModel, parcel_id)
         return self._to_entity(package) if package else None
 
-    async def set_delivery_prices(self, usd_rate: Decimal) -> int:
-        select_stmt = select(
-            ParcelModel.id,
-            ParcelModel.weight,
-            ParcelModel.content_price_usd,
-        ).where(ParcelModel.delivery_price.is_(None))
-
-        result = await self.session.execute(select_stmt)
-        rows = result.all()
-
-        if not rows:
-            return 0
-
-        updates = [
-            {
-                "id": row.id,
-                "delivery_price": calculate_delivery_price(
-                    weight=row.weight,
-                    content_price_usd=row.content_price_usd,
-                    usd_rate=usd_rate,
-                ),
-            }
-            for row in rows
-        ]
-
-        await self.session.execute(
-            update(ParcelModel),
-            updates,
+    async def set_delivery_prices(self, usd_rate: Decimal) -> list[Parcel]:
+        """
+        Метод устанавливает цену доставки всем посылкам, у которых она еще не рассчитана.
+        Возвращает список из объектов Parcel.
+        """
+        result = await self.session.scalars(
+            select(ParcelModel).where(ParcelModel.delivery_price.is_(None))
         )
+
+        parcels_models = result.all()
+
+        if not parcels_models:
+            return []
+
+        parcels_for_log: list[Parcel] = []
+
+        for parcel_model in parcels_models:
+            parcel_model.delivery_price = calculate_delivery_price(
+                parcel_model.weight, parcel_model.content_price_usd, usd_rate
+            )
+
+            parcels_for_log.append(self._to_entity(parcel_model))
 
         await self.session.commit()
 
-        return len(updates)
-
-    # async def set_delivery_prices(self, usd_rate: Decimal) -> int | None:
-    #     stmt = select(ParcelModel).where(ParcelModel.delivery_price.is_(None))
-    #     models = (await self.session.scalars(stmt)).all()
-
-    #     if not models:
-    #         return None
-
-    #     for model in models:
-    #         model.delivery_price = calculate_delivery_price(
-    #             model.weight,
-    #             model.content_price_usd,
-    #             usd_rate )
-
-    #     await self.session.commit()
-
-    #     return len(models)
+        return parcels_for_log
 
     @staticmethod
     def _to_entity(model: ParcelModel) -> Parcel:
