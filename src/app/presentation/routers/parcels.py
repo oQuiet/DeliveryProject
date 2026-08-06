@@ -28,6 +28,9 @@ async def register_parcel(
     session_id: Annotated[str, Depends(get_session_id)],
     service: Annotated[ParcelService, Depends(get_parcel_service)],
 ) -> int | None:
+    """
+    Позволяет зарегистрировать посылку
+    """
     parcel = Parcel(**parcel_request.model_dump(), session_id=session_id)
     created = await service.register(parcel)
     return created.id
@@ -39,6 +42,9 @@ async def get_parcels(
     service: Annotated[ParcelService, Depends(get_parcel_service)],
     params: Annotated[ParcelQueryParams, Query()],
 ) -> list[ParcelResponse]:
+    """
+    Возвращает список посылок пользователя
+    """
     parcels = await service.get_all(session_id, params)
 
     return [ParcelResponse.model_validate(parcel) for parcel in parcels]
@@ -48,6 +54,9 @@ async def get_parcels(
 async def get_concrete_parcel(
     parcel_id: int, service: Annotated[ParcelService, Depends(get_parcel_service)]
 ) -> ParcelResponse:
+    """
+    Возвращает информацию о посылке по ее id
+    """
     parcel = await service.get_one(parcel_id)
 
     if parcel is None:
@@ -64,6 +73,9 @@ async def add_delivery_parcel_company(
     company_id: Annotated[int, Body(embed=True, gt=0)],
     service: Annotated[ParcelService, Depends(get_parcel_service)],
 ) -> ParcelResponse:
+    """
+    Позволяет добавить id компании к конкретной посылке по ее id
+    """
     parcel = await service.assign_company(parcel_id, company_id)
     if parcel is None:
         raise HTTPException(
@@ -79,6 +91,9 @@ async def get_daily_delivery_total(
     service: Annotated[GetDailyDeliveryTotalService, Depends(get_daily_total_service)],
     parcel_type_id: Annotated[int, Query()],
 ) -> Decimal:
+    """
+    Возвращает сумму стоимости всех доставок по типу посылки за последние 3 дня
+    """
     total = await service.get(parcel_type_id)
     return total
 
@@ -87,5 +102,8 @@ async def get_daily_delivery_total(
 async def get_parcels_types(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[ParcelTypeResponse]:
+    """
+    Возвращает доступные типы посылок и их id
+    """
     models = await session.scalars(select(ParcelType))
     return [ParcelTypeResponse.model_validate(model) for model in models]

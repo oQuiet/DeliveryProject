@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from beanie import DecimalAnnotation, Document
@@ -47,8 +47,12 @@ class MongoLogRepository(LogRepository):
         await PriceDelivery.insert_many(documents)
 
     async def get_logs(self, type_id: int) -> Decimal:
+        three_days_ago = datetime.now() - timedelta(days=3)
         result = (
-            await PriceDelivery.find(PriceDelivery.parcel_type_id == type_id)
+            await PriceDelivery.find(
+                PriceDelivery.parcel_type_id == type_id,
+                PriceDelivery.calculated_at >= three_days_ago,
+            )
             .project(DeliveryPriceProjection)
             .sum(PriceDelivery.delivery_price)  # type: ignore
         )
