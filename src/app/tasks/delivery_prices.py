@@ -7,7 +7,6 @@ from app.application.delivery_price_service import CalculateDeliveryPriceService
 from app.config import get_settings
 from app.infrastructure.database import async_session_maker
 from app.infrastructure.external.currency_client import CurrencyClient
-from app.infrastructure.mongo_client import mongo_client
 from app.infrastructure.redis_client import redis_client
 from app.infrastructure.repositories import MongoLogRepository, SQLAlchemyParcelRepository
 
@@ -17,7 +16,7 @@ async def calculate_delivery_prices_once() -> int | None:
 
     async with async_session_maker() as session:
         repository = SQLAlchemyParcelRepository(session)
-        log_repository = MongoLogRepository(mongo_client)
+        log_repository = MongoLogRepository()
         currency_client = CurrencyClient(redis_client, settings.CURRENCY_URL)
 
         service = CalculateDeliveryPriceService(repository, log_repository, currency_client)

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Body, Depends, HTTPException, Query, status
@@ -5,11 +6,16 @@ from fastapi.routing import APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.get_daily_total import GetDailyDeliveryTotalService
 from app.application.parcel_service import ParcelService
 from app.domain.entities import Parcel
 from app.infrastructure.database import get_db
 from app.infrastructure.orm.models import ParcelType
-from app.presentation.dependencies import get_parcel_service, get_session_id
+from app.presentation.dependencies import (
+    get_daily_total_service,
+    get_parcel_service,
+    get_session_id,
+)
 from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 
@@ -68,12 +74,13 @@ async def add_delivery_parcel_company(
     return ParcelResponse.model_validate(parcel)
 
 
-# @parcelsroute.get("/parcels/today")
-# async def get_daily_delivery_total(
-#     service: Annotated[CalculateDeliveryPriceService, Depends(get_concrete_parcel)],
-#     parcel_types: Annotated[list[str], Query()]
-#     ) -> Decimal:
-#     sum = await service.get()
+@parcelsroute.get("/delivery-prices")
+async def get_daily_delivery_total(
+    service: Annotated[GetDailyDeliveryTotalService, Depends(get_daily_total_service)],
+    parcel_type_id: Annotated[int, Query()],
+) -> Decimal:
+    total = await service.get(parcel_type_id)
+    return total
 
 
 @parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])

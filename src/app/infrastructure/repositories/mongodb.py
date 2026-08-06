@@ -2,8 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from beanie import DecimalAnnotation, Document
-from pydantic import Field
-from pymongo import AsyncMongoClient
+from pydantic import BaseModel, Field
 
 from app.application.repositories import LogRepository
 from app.domain.entities import Parcel
@@ -23,10 +22,11 @@ class PriceDelivery(Document):
     calculated_at: datetime = Field(default_factory=datetime.now)
 
 
-class MongoLogRepository(LogRepository):
-    def __init__(self, mongo_client: AsyncMongoClient) -> None:
-        self.mongo_client = mongo_client
+class DeliveryPriceProjection(BaseModel):
+    delivery_price: Decimal
 
+
+class MongoLogRepository(LogRepository):
     async def create_logs(self, parcels: list[Parcel], usd_rate: Decimal) -> None:
         documents = [
             PriceDelivery.model_validate(
@@ -46,5 +46,11 @@ class MongoLogRepository(LogRepository):
 
         await PriceDelivery.insert_many(documents)
 
-    async def get_logs(self, parcel_type_id: int) -> None:
-        return None
+    async def get_logs(self, type_id: int) -> Decimal:
+        result = (
+            await PriceDelivery.find(PriceDelivery.parcel_type_id == type_id)
+            .project(DeliveryPriceProjection)
+            .sum(PriceDelivery.delivery_price)  # type: ignore
+        )
+
+        return Decimal(str(result))

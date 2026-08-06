@@ -23,12 +23,9 @@ class CalculateDeliveryPriceService:
         if not parcels:
             return None
 
-        await self.save(parcels, usd_rate)
+        await self._save(parcels, usd_rate)
 
         return len(parcels)
 
-    async def save(self, parcels: list[Parcel], usd_rate: Decimal) -> None:
+    async def _save(self, parcels: list[Parcel], usd_rate: Decimal) -> None:
         await self.log_repository.create_logs(parcels, usd_rate)
-
-    async def get(self, parcel_type_id: int) -> None:
-        await self.log_repository.get_logs(parcel_type_id)
