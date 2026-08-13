@@ -9,10 +9,8 @@ settings = get_settings()
 database_url = settings.ASYNC_DATABASE_URL
 pool_size = settings.DB_POOL_SIZE
 
-engine = create_async_engine(
-    database_url, pool_size=pool_size, max_overflow=10, pool_pre_ping=True, echo=True
-)
-async_session_maker = async_sessionmaker(engine, expire_on_commit=True, class_=AsyncSession)
+engine = create_async_engine(database_url, pool_size=pool_size, max_overflow=10, pool_pre_ping=True)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:

@@ -1,7 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
+import uuid
 
 from sqlalchemy import (
+    UUID,
     DateTime,
     ForeignKey,
     Index,
@@ -18,7 +20,7 @@ class Base(DeclarativeBase):
 class Parcel(Base):
     __tablename__ = "parcels"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
 
     session_id: Mapped[str] = mapped_column(
         String(36),

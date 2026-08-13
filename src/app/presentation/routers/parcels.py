@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.get_daily_total import GetDailyDeliveryTotalService
 from app.application.parcel_service import ParcelService
-from app.domain.entities import Parcel
 from app.infrastructure.database import get_db
 from app.infrastructure.orm.models import ParcelType
 from app.presentation.dependencies import (
@@ -18,6 +17,7 @@ from app.presentation.dependencies import (
 )
 from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
+from app.tasks.celery_tasks import register_parcel_task
 
 parcelsroute = APIRouter()
 
@@ -26,14 +26,12 @@ parcelsroute = APIRouter()
 async def register_parcel(
     parcel_request: ParcelRequest,
     session_id: Annotated[str, Depends(get_session_id)],
-    service: Annotated[ParcelService, Depends(get_parcel_service)],
-) -> int | None:
+) -> None:
     """
     Позволяет зарегистрировать посылку
     """
-    parcel = Parcel(**parcel_request.model_dump(), session_id=session_id)
-    created = await service.register(parcel)
-    return created.id
+    register_parcel_task.delay(session_id, parcel_request.model_dump())
+    # Вернуть id посылки
 
 
 @parcelsroute.get("/parcels", response_model=list[ParcelResponse])

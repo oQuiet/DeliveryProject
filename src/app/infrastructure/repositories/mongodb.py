@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
+from uuid import UUID
 
 from beanie import DecimalAnnotation, Document
 from pydantic import BaseModel, Field
@@ -11,7 +12,7 @@ from app.domain.entities import Parcel
 class PriceDelivery(Document):
     model_config = {"from_attributes": True}
 
-    parcel_id: int
+    parcel_id: UUID
     name: str
     weight: DecimalAnnotation
     content_price_usd: DecimalAnnotation
@@ -27,24 +28,21 @@ class DeliveryPriceProjection(BaseModel):
 
 
 class MongoLogRepository(LogRepository):
-    async def create_logs(self, parcels: list[Parcel], usd_rate: Decimal) -> None:
-        documents = [
-            PriceDelivery.model_validate(
-                {
-                    "parcel_id": parcel.id,
-                    "name": parcel.name,
-                    "weight": parcel.weight,
-                    "content_price_usd": parcel.content_price_usd,
-                    "delivery_price": parcel.delivery_price,
-                    "usd_rate": usd_rate,
-                    "company_id": parcel.company_id,
-                    "parcel_type_id": parcel.parcel_type_id,
-                }
-            )
-            for parcel in parcels
-        ]
+    async def create_logs(self, parcel: Parcel, usd_rate: Decimal) -> None:
+        document = PriceDelivery.model_validate(
+            {
+                "parcel_id": parcel.id,
+                "name": parcel.name,
+                "weight": parcel.weight,
+                "content_price_usd": parcel.content_price_usd,
+                "delivery_price": parcel.delivery_price,
+                "usd_rate": usd_rate,
+                "company_id": parcel.company_id,
+                "parcel_type_id": parcel.parcel_type_id,
+            }
+        )
 
-        await PriceDelivery.insert_many(documents)
+        await PriceDelivery.insert(document)
 
     async def get_logs(self, type_id: int) -> Decimal:
         three_days_ago = datetime.now() - timedelta(days=3)
