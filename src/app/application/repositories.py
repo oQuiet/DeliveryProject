@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from uuid import UUID
 
 from app.domain.entities import Parcel
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
@@ -10,10 +11,10 @@ class ParcelRepository(ABC):
     async def add(self, session_id: str, parcel: dict) -> Parcel: ...
 
     @abstractmethod
-    async def save(self, parcel_id: int, company_id: int) -> Parcel | None: ...
+    async def save(self, parcel_id: UUID, company_id: int) -> Parcel | None: ...
 
     @abstractmethod
-    async def get_by_id(self, parcel_id: int) -> Parcel | None: ...
+    async def get_by_id(self, parcel_id: UUID) -> Parcel | None: ...
 
     @abstractmethod
     async def list_by_session(self, session_id: str, params: ParcelQueryParams) -> list[Parcel]: ...

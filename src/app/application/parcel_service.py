@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.application.repositories import ParcelRepository
 from app.domain.entities import Parcel
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
@@ -10,8 +12,8 @@ class ParcelService:
     async def get_all(self, session_id: str, params: ParcelQueryParams) -> list[Parcel]:
         return await self.repository.list_by_session(session_id, params)
 
-    async def get_one(self, parcel_id: int) -> Parcel | None:
+    async def get_one(self, parcel_id: UUID) -> Parcel | None:
         return await self.repository.get_by_id(parcel_id)
 
-    async def assign_company(self, parcel_id: int, company_id: int) -> Parcel | None:
+    async def assign_company(self, parcel_id: UUID, company_id: int) -> Parcel | None:
         return await self.repository.save(parcel_id, company_id)

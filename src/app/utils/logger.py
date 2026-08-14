@@ -1,15 +1,45 @@
+from collections.abc import Mapping
 import sys
 
 from loguru import logger
 
-logger.remove()
+from app.config import get_settings
+
+setting = get_settings()
+
+BASE_FORMAT = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{message}</cyan>"
 
 
-logger.add(
-    sink=sys.stdout,
-    serialize=True,
-    colorize=True,
-    format="{message}",
-    level="INFO",
-    enqueue=True,
-)
+def development_formatter(record: Mapping[str, object]) -> str:
+    if record["extra"]:
+        return BASE_FORMAT + " | <yellow>{extra}</yellow>\n{exception}"
+
+    return BASE_FORMAT + "\n{exception}"
+
+
+def setup_logging() -> None:
+    env = setting.APP_ENV
+    level = setting.LOG_LEVEL
+
+    logger.remove()
+
+    if env == "prod":
+        logger.add(sys.stdout, level=level, serialize=True, enqueue=True)
+    else:
+        # fmt = ("<green>{time:HH:mm:ss}</green> | " \
+        #     "<level>{level}</level> | " \
+        #     "<cyan>{message}</cyan> | " \
+        #     "<yellow>session_id={extra[session_id]}</yellow> | " \
+        #     "<yellow>parcel_id={extra[parcel_id]}</yellow>"
+        # )
+        logger.add(sys.stdout, level=level, format=development_formatter)
+
+    logger.add(
+        "logs/app.log",
+        rotation="10 MB",  # новый файл каждые 10 МБ
+        retention="7 days",  # хранить 7 дней
+        compression="zip",  # старые архивировать
+    )
+
+
+setup_logging()

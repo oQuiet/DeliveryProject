@@ -17,11 +17,13 @@ class CalculateDeliveryPriceService:
         self.log_repository = log_repository
         self.currency_client = currency_client
 
-    async def calculate(self, session_id: str, parcel: dict) -> None:
+    async def calculate(self, session_id: str, parcel_id: str, parcel: dict) -> None:
         usd_rate = await self.currency_client.fetch_currency()
         parcel["delivery_price"] = calculate_delivery_price(
             parcel["weight"], parcel["content_price_usd"], usd_rate
         )
+        parcel["id"] = parcel_id
+
         result = await self.repository.add(session_id, parcel)
         await self._save(result, usd_rate)
 

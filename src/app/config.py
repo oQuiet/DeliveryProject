@@ -25,7 +25,8 @@ class Settings(BaseSettings):
 
     DEBUG: bool  # type: ignore[call-arg]
     DB_POOL_SIZE: int = Field(default=10, ge=1, le=50)
-    LOG_LEVEL: str  # type: ignore[call-arg]
+    APP_ENV: str = "dev"
+    LOG_LEVEL: str = "INFO"
     MAX_RETRIES: int = 5
 
     CORS_ORIGINS: list[str] = ["*"]

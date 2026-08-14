@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,8 +15,12 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         self.session = session
 
     async def add(self, session_id: str, parcel: dict) -> Parcel:
+        """
+        Добавляет посылку в базу данных
+        """
         model = ParcelModel(
             session_id=session_id,
+            id=parcel["id"],
             name=parcel["name"],
             weight=parcel["weight"],
             content_price_usd=parcel["content_price_usd"],
@@ -28,7 +34,7 @@ class SQLAlchemyParcelRepository(ParcelRepository):
 
         return self._to_entity(model)
 
-    async def save(self, parcel_id: int, company_id: int) -> Parcel | None:
+    async def save(self, parcel_id: UUID, company_id: int) -> Parcel | None:
         stmt = (
             update(ParcelModel)
             .where(ParcelModel.company_id.is_(None), ParcelModel.id == parcel_id)
@@ -70,12 +76,15 @@ class SQLAlchemyParcelRepository(ParcelRepository):
 
         return [self._to_entity(model) for model in models]
 
-    async def get_by_id(self, parcel_id: int) -> Parcel | None:
+    async def get_by_id(self, parcel_id: UUID) -> Parcel | None:
         package = await self.session.get(ParcelModel, parcel_id)
         return self._to_entity(package) if package else None
 
     @staticmethod
     def _to_entity(model: ParcelModel) -> Parcel:
+        """
+        Создает domain объект Parcel из объекта строки базы данных
+        """
         return Parcel(
             id=model.id,
             session_id=model.session_id,

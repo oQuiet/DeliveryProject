@@ -1,5 +1,7 @@
 from decimal import Decimal
 from typing import Annotated
+import uuid
+from uuid import UUID
 
 from fastapi import Body, Depends, HTTPException, Query, status
 from fastapi.routing import APIRouter
@@ -18,20 +20,23 @@ from app.presentation.dependencies import (
 from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 from app.tasks.celery_tasks import register_parcel_task
+from app.utils.logger import logger
 
 parcelsroute = APIRouter()
 
 
 @parcelsroute.post("/parcels")
 async def register_parcel(
-    parcel_request: ParcelRequest,
-    session_id: Annotated[str, Depends(get_session_id)],
-) -> None:
+    parcel_request: ParcelRequest, session_id: Annotated[str, Depends(get_session_id)]
+) -> UUID:
     """
     Позволяет зарегистрировать посылку
     """
-    register_parcel_task.delay(session_id, parcel_request.model_dump())
-    # Вернуть id посылки
+    parcel_id = uuid.uuid4()
+    logger.bind(session_id=session_id, parcel_id=parcel_id).info("Запрос к /parcels")
+    register_parcel_task.delay(session_id, parcel_id, parcel_request.model_dump())
+
+    return parcel_id
 
 
 @parcelsroute.get("/parcels", response_model=list[ParcelResponse])
@@ -50,11 +55,12 @@ async def get_parcels(
 
 @parcelsroute.get("/parcels/{parcel_id}")
 async def get_concrete_parcel(
-    parcel_id: int, service: Annotated[ParcelService, Depends(get_parcel_service)]
+    parcel_id: UUID, service: Annotated[ParcelService, Depends(get_parcel_service)]
 ) -> ParcelResponse:
     """
     Возвращает информацию о посылке по ее id
     """
+    logger.bind(parcel_id=parcel_id).info(f"Запрос к /parcels/{parcel_id}")
     parcel = await service.get_one(parcel_id)
 
     if parcel is None:
@@ -67,7 +73,7 @@ async def get_concrete_parcel(
 
 @parcelsroute.patch("/parcels/{parcel_id}/company")
 async def add_delivery_parcel_company(
-    parcel_id: int,
+    parcel_id: UUID,
     company_id: Annotated[int, Body(embed=True, gt=0)],
     service: Annotated[ParcelService, Depends(get_parcel_service)],
 ) -> ParcelResponse:
