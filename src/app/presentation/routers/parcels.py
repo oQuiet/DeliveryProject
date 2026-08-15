@@ -3,7 +3,7 @@ from typing import Annotated
 import uuid
 from uuid import UUID
 
-from fastapi import Body, Depends, HTTPException, Query, status
+from fastapi import Body, Depends, Query, status
 from fastapi.routing import APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from app.presentation.dependencies import (
 from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
 from app.tasks.celery_tasks import register_parcel_task
+from app.utils.exceptions import CustomException
 from app.utils.logger import logger
 
 parcelsroute = APIRouter()
@@ -33,8 +34,11 @@ async def register_parcel(
     Позволяет зарегистрировать посылку
     """
     parcel_id = uuid.uuid4()
-    logger.bind(session_id=session_id, parcel_id=parcel_id).info("Запрос к /parcels")
     register_parcel_task.delay(session_id, parcel_id, parcel_request.model_dump())
+
+    logger.bind(parcel_id=parcel_id, session_id=session_id).info(
+        "Регистрация посылки поставлена в очередь"
+    )
 
     return parcel_id
 
@@ -60,11 +64,9 @@ async def get_concrete_parcel(
     """
     Возвращает информацию о посылке по ее id
     """
-    logger.bind(parcel_id=parcel_id).info(f"Запрос к /parcels/{parcel_id}")
     parcel = await service.get_one(parcel_id)
-
     if parcel is None:
-        raise HTTPException(
+        raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Посылки с таким id не существует"
         )
 
@@ -78,11 +80,11 @@ async def add_delivery_parcel_company(
     service: Annotated[ParcelService, Depends(get_parcel_service)],
 ) -> ParcelResponse:
     """
-    Позволяет добавить id компании к конкретной посылке по ее id
+    Позволяет добавить id компании к посылке по ее id
     """
     parcel = await service.assign_company(parcel_id, company_id)
     if parcel is None:
-        raise HTTPException(
+        raise CustomException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Посылка уже закреплена за другой транспортной компанией",
         )
@@ -90,7 +92,7 @@ async def add_delivery_parcel_company(
     return ParcelResponse.model_validate(parcel)
 
 
-@parcelsroute.get("/delivery-prices")
+@parcelsroute.get("/delivery_prices")
 async def get_daily_delivery_total(
     service: Annotated[GetDailyDeliveryTotalService, Depends(get_daily_total_service)],
     parcel_type_id: Annotated[int, Query()],
@@ -99,6 +101,12 @@ async def get_daily_delivery_total(
     Возвращает сумму стоимости всех доставок по типу посылки за последние 3 дня
     """
     total = await service.get(parcel_type_id)
+    if total is None:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Посылок с таким типом за последние 3 дня не найдено",
+        )
+
     return total
 
 

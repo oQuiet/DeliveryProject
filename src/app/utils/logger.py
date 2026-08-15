@@ -26,12 +26,6 @@ def setup_logging() -> None:
     if env == "prod":
         logger.add(sys.stdout, level=level, serialize=True, enqueue=True)
     else:
-        # fmt = ("<green>{time:HH:mm:ss}</green> | " \
-        #     "<level>{level}</level> | " \
-        #     "<cyan>{message}</cyan> | " \
-        #     "<yellow>session_id={extra[session_id]}</yellow> | " \
-        #     "<yellow>parcel_id={extra[parcel_id]}</yellow>"
-        # )
         logger.add(sys.stdout, level=level, format=development_formatter)
 
     logger.add(

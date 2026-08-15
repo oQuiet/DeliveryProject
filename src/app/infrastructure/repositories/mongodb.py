@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.application.repositories import LogRepository
 from app.domain.entities import Parcel
+from app.utils.logger import logger
 
 
 class PriceDelivery(Document):
@@ -44,7 +45,11 @@ class MongoLogRepository(LogRepository):
 
         await PriceDelivery.insert(document)
 
-    async def get_logs(self, type_id: int) -> Decimal:
+        logger.bind(parcel_id=parcel.id, document_id=document.id).debug(
+            "Документ добавлен в MongoDB"
+        )
+
+    async def get_logs(self, type_id: int) -> Decimal | None:
         three_days_ago = datetime.now() - timedelta(days=3)
         result = (
             await PriceDelivery.find(
@@ -54,5 +59,9 @@ class MongoLogRepository(LogRepository):
             .project(DeliveryPriceProjection)
             .sum(PriceDelivery.delivery_price)  # type: ignore
         )
+        if result is None:
+            return None
+
+        logger.bind(type_id=type_id).debug("Получение списка документов по типу за последние 3 дня")
 
         return Decimal(str(result))
