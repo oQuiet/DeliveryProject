@@ -4,6 +4,7 @@ from uuid import UUID
 
 from beanie import DecimalAnnotation, Document
 from pydantic import BaseModel, Field
+from pymongo import ASCENDING, IndexModel
 
 from app.application.repositories import LogRepository
 from app.domain.entities import Parcel
@@ -22,6 +23,17 @@ class PriceDelivery(Document):
     company_id: int | None
     parcel_type_id: int
     calculated_at: datetime = Field(default_factory=datetime.now)
+
+    class Settings:
+        indexes = [
+            IndexModel(
+                [
+                    ("parcel_type_id", ASCENDING),
+                    ("calculated_at", ASCENDING),
+                ],
+                name="ix_price_delivery_type_calculated_at",
+            ),
+        ]
 
 
 class DeliveryPriceProjection(BaseModel):

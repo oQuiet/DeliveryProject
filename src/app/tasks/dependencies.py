@@ -18,7 +18,6 @@ async def register_parcel_async(session_id: str, parcel_id: str, data: dict) -> 
 
 async def update_currency() -> None:
     currency_client = get_currency_client()
-    print("GET CURRENCY RATE")
     logger.info("GET CURRENCY RATE")
 
     await currency_client.update_currency()

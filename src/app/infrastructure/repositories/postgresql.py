@@ -82,7 +82,9 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         elif params.has_delivery_price is False:
             stmt = stmt.where(ParcelModel.delivery_price.is_(None))
 
-        stmt = stmt.limit(params.limit).offset(params.offset)
+        stmt = (
+            stmt.order_by(ParcelModel.created_at.desc()).limit(params.limit).offset(params.offset)
+        )
         models = (await self.session.scalars(stmt)).all()
 
         logger.bind(session_id=session_id, params=params).debug("Фильтрация посылок")

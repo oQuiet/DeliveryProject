@@ -11,11 +11,11 @@ ENV_FILE = PROJECT_ROOT / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE, case_sensitive=False)
 
-    DB_HOST: str  # type: ignore[call-arg]
-    DB_PORT: str  # type: ignore[call-arg]
-    DB_USER: str  # type: ignore[call-arg]
-    DB_PASS: str  # type: ignore[call-arg]
-    DB_NAME: str  # type: ignore[call-arg]
+    POSTGRES_HOST: str  # type: ignore[call-arg]
+    POSTGRES_PORT: str  # type: ignore[call-arg]
+    POSTGRES_USER: str  # type: ignore[call-arg]
+    POSTGRES_PASSWORD: str  # type: ignore[call-arg]
+    POSTGRES_DB: str  # type: ignore[call-arg]
 
     REDIS_URL: RedisDsn  # type: ignore[call-arg]
     MONGO_URL: MongoDsn  # type: ignore[call-arg]
@@ -33,7 +33,11 @@ class Settings(BaseSettings):
 
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
 
 @lru_cache

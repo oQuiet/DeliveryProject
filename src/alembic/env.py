@@ -17,11 +17,11 @@ from app.infrastructure.orm.models import Base
 config = context.config
 
 section = config.config_ini_section
-config.set_section_option(section, "DB_HOST", get_settings().DB_HOST)
-config.set_section_option(section, "DB_PORT", get_settings().DB_PORT)
-config.set_section_option(section, "DB_USER", get_settings().DB_USER)
-config.set_section_option(section, "DB_NAME", get_settings().DB_NAME)
-config.set_section_option(section, "DB_PASS", get_settings().DB_PASS)
+config.set_section_option(section, "POSTGRES_HOST", get_settings().POSTGRES_HOST)
+config.set_section_option(section, "POSTGRES_PORT", get_settings().POSTGRES_PORT)
+config.set_section_option(section, "POSTGRES_USER", get_settings().POSTGRES_USER)
+config.set_section_option(section, "POSTGRES_DB", get_settings().POSTGRES_DB)
+config.set_section_option(section, "POSTGRES_PASSWORD", get_settings().POSTGRES_PASSWORD)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

@@ -41,6 +41,3 @@ def update_currency_rate(self: Task) -> None:
     except Exception:
         logger.exception("Неожиданная ошибка обновления курса")
         raise
-
-
-# Как работает try except и logger.catch вместе?
