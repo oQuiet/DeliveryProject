@@ -26,7 +26,7 @@ from app.utils.logger import logger
 parcelsroute = APIRouter()
 
 
-@parcelsroute.post("/parcels")
+@parcelsroute.post("/parcels", status_code=status.HTTP_201_CREATED)
 async def register_parcel(
     parcel_request: ParcelRequest, session_id: Annotated[str, Depends(get_session_id)]
 ) -> UUID:

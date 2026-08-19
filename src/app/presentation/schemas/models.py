@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Annotated, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -15,6 +16,7 @@ class ParcelRequest(BaseModel):
 
 
 class ParcelResponse(BaseModel):
+    id: UUID
     name: str = Field(max_length=255)
     weight: PositiveDecimal
     content_price_usd: PositiveDecimal

@@ -76,12 +76,6 @@ class SQLAlchemyParcelRepository(ParcelRepository):
         if params.parcel_type is not None:
             stmt = stmt.join(ParcelModel.parcel_type).where(ParcelType.name.in_(params.parcel_type))
 
-        if params.has_delivery_price is True:
-            stmt = stmt.where(ParcelModel.delivery_price.is_not(None))
-
-        elif params.has_delivery_price is False:
-            stmt = stmt.where(ParcelModel.delivery_price.is_(None))
-
         stmt = (
             stmt.order_by(ParcelModel.created_at.desc()).limit(params.limit).offset(params.offset)
         )

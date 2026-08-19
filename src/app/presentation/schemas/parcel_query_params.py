@@ -10,7 +10,6 @@ class ParcelPagination(BaseModel):
 
 class ParcelFilters(BaseModel):
     parcel_type: tuple[Literal["Одежда", "Электроника", "Разное"], ...] | None = None
-    has_delivery_price: bool | None = None
 
 
 class ParcelQueryParams(ParcelFilters, ParcelPagination):
