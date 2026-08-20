@@ -5,17 +5,17 @@ Revises: 804decd45398
 Create Date: 2026-08-17 17:25:23.355439
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'd2b40e3896b5'
-down_revision: Union[str, Sequence[str], None] = '804decd45398'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = '804decd45398'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 parcel_types = sa.table(

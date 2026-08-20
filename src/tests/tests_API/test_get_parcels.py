@@ -1,9 +1,7 @@
+
 import pytest
-from uuid import UUID
-from decimal import Decimal
 
 from app.presentation.schemas.parcel_query_params import ParcelQueryParams
-
 
 # -------------------------- Happy path --------------------------
 

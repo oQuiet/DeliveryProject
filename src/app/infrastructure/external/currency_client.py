@@ -8,12 +8,13 @@ from redis.asyncio import Redis
 class CurrencyClient:
     CACHE_KEY = "usd_rub"
 
-    def __init__(self, redis: Redis, url: str) -> None:
+    def __init__(self, redis: Redis, url: str, http_session: aiohttp.ClientSession) -> None:
         self.redis = redis
         self.url = url
+        self.http_session = http_session
 
     async def update_currency(self) -> Decimal:
-        async with aiohttp.ClientSession() as session, session.get(self.url) as response:
+        async with self.http_session.get(self.url) as response:
             data = await response.json(
                 content_type=None,
                 loads=lambda s: json.loads(s, parse_float=Decimal),

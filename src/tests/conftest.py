@@ -3,17 +3,15 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 from httpx2 import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-import pytest
 import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.application.parcel_service import ParcelService
 from app.application.get_daily_total import GetDailyDeliveryTotalService
+from app.application.parcel_service import ParcelService
 from app.domain.entities import Parcel
 from app.infrastructure.database import get_db
 from app.main import app
-from app.presentation.dependencies import get_parcel_service
-from app.presentation.dependencies import get_daily_total_service
+from app.presentation.dependencies import get_daily_total_service, get_parcel_service
 
 
 @pytest_asyncio.fixture
@@ -54,7 +52,7 @@ async def client(
         return db_session
 
     async def override_mongo_service() -> AsyncMock:
-        return mongo_service    
+        return mongo_service
 
     app.dependency_overrides[get_parcel_service] = override_parcel_service
     app.dependency_overrides[get_db] = override_get_db

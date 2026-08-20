@@ -22,6 +22,7 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 colorama==0.4.6
 coverage==7.15.2
+-e git+https://github.com/oQuiet/DeliveryProject.git@8369765a4ed7db4b7d66c8e496a7319676154d0b#egg=deliveryproject
 distlib==0.4.3
 dnspython==2.8.0
 fastapi==0.139.2
@@ -62,6 +63,7 @@ pydantic_core==2.46.4
 Pygments==2.20.0
 pymongo==4.17.0
 pytest==9.1.1
+pytest-asyncio==1.4.0
 pytest-cov==7.1.0
 python-dateutil==2.9.0.post0
 python-discovery==1.4.4
