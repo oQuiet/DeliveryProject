@@ -43,7 +43,7 @@ async def test_get_parcels_content_case(
         "weight": "50.00",
         "content_price_usd": "1000.00",
         "delivery_price": "2800.00",
-        "company_id": 1,
+        "company_id": 'Транспортная компания не указана',
         "parcel_type": "Одежда",
     }
 ]
