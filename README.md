@@ -24,7 +24,7 @@ DeliveryProject — HTTP API для регистрации посылок и р�
 - RabbitMQ 4.3.4 и Celery 5.6;
 - aiohttp для получения курса валют;
 - Poetry 2.4.1 в Docker-сборке;
-- pytest, pytest-asyncio и pytest-cov;
+- pytest, pytest-asyncio, pytest-cov и `httpx2`;
 - Ruff, Mypy, Bandit и Radon.
 
 Приложение разделено на доменный, прикладной, инфраструктурный и HTTP-слои.
@@ -45,61 +45,6 @@ DeliveryProject — HTTP API для регистрации посылок и р�
 - доступные экземпляры PostgreSQL, MongoDB, Redis и RabbitMQ;
 - POSIX-совместимое окружение. Цели `Makefile` используют `make`, `grep` и `awk`.
 
-## Переменные окружения
-
-Приложение читает локальные настройки из `.env`. Docker Compose читает `.env.docker`. Оба файла исключены из Git. В репозитории находятся шаблоны `.env_example` и `.env.docker_example`.
-
-| Переменная | Обязательна | Назначение |
-| --- | --- | --- |
-| `POSTGRES_HOST` | да | Хост PostgreSQL |
-| `POSTGRES_PORT` | да | Порт PostgreSQL |
-| `POSTGRES_USER` | да | Пользователь PostgreSQL |
-| `POSTGRES_PASSWORD` | да | Пароль PostgreSQL |
-| `POSTGRES_DB` | да | Имя базы PostgreSQL |
-| `REDIS_URL` | да | DSN Redis; используется как кеш и Celery backend |
-| `MONGO_URL` | да | DSN MongoDB |
-| `MONGO_DB_NAME` | да | Имя базы MongoDB |
-| `RABBIT_URL` | да | AMQP DSN брокера Celery |
-| `CURRENCY_URL` | да | URL JSON-источника курса USD/RUB |
-| `RABBITMQ_DEFAULT_USER` | только Docker | Пользователь создаваемого контейнера RabbitMQ |
-| `RABBITMQ_DEFAULT_PASS` | только Docker | Пароль создаваемого контейнера RabbitMQ |
-| `DB_POOL_SIZE` | нет | Размер пула PostgreSQL, допустимо от 1 до 50; по умолчанию в коде `10`, в шаблонах `20` |
-| `CORS_ORIGINS` | нет | JSON-массив разрешённых CORS origin; по умолчанию в коде `["*"]` |
-| `MAX_RETRIES` | нет | Числовая настройка, по умолчанию `5`; в текущем коде не используется |
-| `APP_ENV` | нет | При значении `prod` включает JSON-формат логов; по умолчанию `dev` |
-| `DEBUG` | да | Булево значение `true` или `false` |
-| `LOG_LEVEL` | нет | Уровень Loguru, по умолчанию `INFO` |
-
-Безопасный пример `.env.docker`:
-
-```dotenv
-POSTGRES_HOST=postgresql
-POSTGRES_PORT=5432
-POSTGRES_USER=delivery
-POSTGRES_PASSWORD=CHANGE_ME
-POSTGRES_DB=delivery
-
-REDIS_URL=redis://redis:6379/0
-
-MONGO_URL=mongodb://mongodb:27017
-MONGO_DB_NAME=delivery
-
-RABBITMQ_DEFAULT_USER=delivery
-RABBITMQ_DEFAULT_PASS=CHANGE_ME
-RABBIT_URL=amqp://delivery:CHANGE_ME@rabbitmq:5672//
-
-DB_POOL_SIZE=20
-CORS_ORIGINS=["http://localhost:8000"]
-MAX_RETRIES=5
-CURRENCY_URL=https://www.cbr-xml-daily.ru/daily_json.js
-
-APP_ENV=prod
-DEBUG=false
-LOG_LEVEL=INFO
-```
-
-`CHANGE_ME` — только плейсхолдер. Перед запуском задайте собственные значения и не добавляйте `.env` или `.env.docker` в Git. Для локального запуска замените имена Docker-сервисов (`postgresql`, `mongodb`, `redis`, `rabbitmq`) адресами реально запущенных сервисов, например `127.0.0.1`.
-
 ## Установка и запуск через Docker
 
 Это наиболее полный способ запуска, зафиксированный в репозитории. Compose запускает миграции, API, Celery worker, Celery beat и все хранилища.
@@ -110,7 +55,8 @@ LOG_LEVEL=INFO
 cp .env.docker_example .env.docker
 ```
 
-2. Заполните `.env.docker`, используя безопасный пример выше.
+2. Заполните обязательные пустые значения в `.env.docker`, используя отдельные
+   учётные данные для этого окружения, и не добавляйте файл в Git.
 
 3. Соберите и запустите сервисы:
 
@@ -193,7 +139,7 @@ poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 | Метод | Путь | Назначение |
 | --- | --- | --- |
-| `POST` | `/parcels` | Поставить регистрацию посылки в очередь; возвращает UUID и устанавливает `session_id` |
+| `POST` | `/parcels` | Поставить регистрацию посылки в очередь; возвращает UUID и создаёт `session_id`, если cookie отсутствует |
 | `GET` | `/parcels` | Получить посылки текущей сессии |
 | `GET` | `/parcels/{parcel_id}` | Получить посылку по UUID |
 | `PATCH` | `/parcels/{parcel_id}/company` | Назначить транспортную компанию |
@@ -272,7 +218,9 @@ poetry run pytest
 poetry run pytest --cov=app --cov-report=term-missing
 ```
 
-Тесты находятся в `src/tests` и проверяют HTTP API. Перед импортом приложения настройки валидируются, а при запуске lifespan приложение выполняет `ping` MongoDB, поэтому требуется корректный `.env` и доступная MongoDB.
+Тесты находятся в `src/tests` и отправляют запросы непосредственно в ASGI-приложение через `httpx2.ASGITransport`. При импорте приложения настройки валидируются, поэтому обязательные переменные должны быть заданы через `.env` или окружение. Текущий транспорт не запускает FastAPI lifespan, а зависимости PostgreSQL и MongoDB и отправка Celery-задачи подменяются моками. Поэтому для существующих тестов доступные PostgreSQL, MongoDB, Redis и RabbitMQ не требуются.
+
+Текущий набор тестов не проверяет реальную цепочку `Celery → PostgreSQL → MongoDB`, а также не содержит позитивного сценария `GET /parcels/{parcel_id}`.
 
 Проверить код без автоматических исправлений:
 
@@ -300,13 +248,13 @@ make hal
 make raw
 ```
 
-Полная локальная проверка:
+Комплексная проверка качества без запуска pytest:
 
 ```bash
 make check
 ```
 
-`make check` запускает Ruff с автоисправлением и форматированием, затем Mypy, Bandit и метрики Radon, поэтому команда может изменить файлы в `src/app`.
+`make check` запускает Ruff с автоисправлением и форматированием, затем Mypy, Bandit и метрики Radon, поэтому команда может изменить файлы в `src/app`. Тесты в эту цель не входят.
 
 Настроить и вручную запустить pre-commit hook, который вызывает `make check`:
 
@@ -353,7 +301,7 @@ DEBUG=false
 
 ### API не запускается без MongoDB
 
-При старте приложение выполняет `ping` MongoDB и инициализирует Beanie. Проверьте `MONGO_URL`, `MONGO_DB_NAME` и состояние контейнера:
+При реальном старте через Uvicorn FastAPI lifespan выполняет `ping` MongoDB и инициализирует Beanie. Текущие тесты lifespan не запускают. Если сервер не стартует, проверьте `MONGO_URL`, `MONGO_DB_NAME` и состояние контейнера:
 
 ```bash
 docker compose ps mongodb
