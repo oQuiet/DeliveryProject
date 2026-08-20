@@ -12,7 +12,7 @@ class ParcelRequest(BaseModel):
     weight: PositiveDecimal
     content_price_usd: PositiveDecimal
     parcel_type_id: int = Field(gt=0, lt=4)
-    company_id: int | None = None
+    company_id: int | None = Field(default=None, gt=0)
 
 
 class ParcelResponse(BaseModel):

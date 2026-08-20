@@ -103,9 +103,6 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./rabbitmq.conf:/etc/rabbitmq/conf.d/30-celery-compat.conf:ro
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     restart: unless-stopped
 
     healthcheck:

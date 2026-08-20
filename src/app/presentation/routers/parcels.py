@@ -26,7 +26,7 @@ from app.utils.logger import logger
 parcelsroute = APIRouter()
 
 
-@parcelsroute.post("/parcels", status_code=status.HTTP_201_CREATED)
+@parcelsroute.post("/parcels", response_model=UUID, status_code=status.HTTP_201_CREATED)
 async def register_parcel(
     parcel_request: ParcelRequest, session_id: Annotated[str, Depends(get_session_id)]
 ) -> UUID:
@@ -43,7 +43,7 @@ async def register_parcel(
     return parcel_id
 
 
-@parcelsroute.get("/parcels", response_model=list[ParcelResponse])
+@parcelsroute.get("/parcels", response_model=list[ParcelResponse], status_code=status.HTTP_200_OK)
 async def get_parcels(
     session_id: Annotated[str, Depends(get_session_id)],
     service: Annotated[ParcelService, Depends(get_parcel_service)],
@@ -57,7 +57,9 @@ async def get_parcels(
     return [ParcelResponse.model_validate(parcel) for parcel in parcels]
 
 
-@parcelsroute.get("/parcels/{parcel_id}")
+@parcelsroute.get(
+    "/parcels/{parcel_id}", response_model=ParcelResponse, status_code=status.HTTP_200_OK
+)
 async def get_concrete_parcel(
     parcel_id: UUID, service: Annotated[ParcelService, Depends(get_parcel_service)]
 ) -> ParcelResponse:
@@ -73,7 +75,9 @@ async def get_concrete_parcel(
     return ParcelResponse.model_validate(parcel)
 
 
-@parcelsroute.patch("/parcels/{parcel_id}/company")
+@parcelsroute.patch(
+    "/parcels/{parcel_id}/company", response_model=ParcelResponse, status_code=status.HTTP_200_OK
+)
 async def add_delivery_parcel_company(
     parcel_id: UUID,
     company_id: Annotated[int, Body(embed=True, gt=0)],
@@ -92,7 +96,7 @@ async def add_delivery_parcel_company(
     return ParcelResponse.model_validate(parcel)
 
 
-@parcelsroute.get("/delivery_prices")
+@parcelsroute.get("/delivery_prices", response_model=Decimal, status_code=status.HTTP_200_OK)
 async def get_daily_delivery_total(
     service: Annotated[GetDailyDeliveryTotalService, Depends(get_daily_total_service)],
     parcel_type_id: Annotated[int, Query()],
@@ -110,7 +114,9 @@ async def get_daily_delivery_total(
     return total
 
 
-@parcelsroute.get("/parcels_types", response_model=list[ParcelTypeResponse])
+@parcelsroute.get(
+    "/parcels_types", response_model=list[ParcelTypeResponse], status_code=status.HTTP_200_OK
+)
 async def get_parcels_types(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[ParcelTypeResponse]:

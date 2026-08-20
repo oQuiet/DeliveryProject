@@ -10,7 +10,7 @@ async def custom_exception_handler(request: Request, exc: CustomException) -> JS
     route = request.scope.get("route")
     route_path = getattr(route, "path", None)
 
-    logger.bind(route=route_path, status_code=exc.status_code, detail=exc.detail).warning(
+    logger.bind(route=route_path, status_code=exc.status_code, detail=exc.detail).info(
         f"Возникла ошибка при запросе к {route_path}"
     )
 
@@ -21,7 +21,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     route = request.scope.get("route")
     route_path = getattr(route, "path", None)
 
-    logger.bind(route=route_path).opt(exception=exc).error(f"Возникла неизвестная ошибка {exc}")
+    logger.bind(route=route_path).opt(exception=exc).info(f"Возникла неизвестная ошибка {exc}")
 
     return JSONResponse(status_code=500, content={"Ошибка": "Возникла неизвестная ошибка"})
 
@@ -32,6 +32,6 @@ async def validation_exception_handler(
     route = request.scope.get("route")
     route_path = getattr(route, "path", None)
 
-    logger.bind(route=route_path, status_code=422).warning("Ошибка валидации входных данных")
+    logger.bind(route=route_path, status_code=422).info("Ошибка валидации входных данных")
 
     return JSONResponse(status_code=422, content={"Ошибка": "Переданы некорректные данные"})

@@ -20,7 +20,7 @@ class CurrencyClient:
             )
 
             rate = data["Valute"]["USD"]["Value"]
-            await self.redis.set(self.CACHE_KEY, str(rate))
+            await self.redis.set(self.CACHE_KEY, str(rate), ex=3900)
 
             return Decimal(rate)
 

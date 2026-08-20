@@ -10,7 +10,7 @@ from app.utils.logger import logger
 settings = get_settings()
 
 
-@celery_app.task(bind=True, max_retries=3)
+@celery_app.task()
 def register_parcel_task(session_id: str, parcel_id: str, data: dict) -> None:
     task_logger = logger.bind(task_id=session_id, parcel_id=parcel_id)
 
