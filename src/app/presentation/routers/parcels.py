@@ -1,0 +1,127 @@
+from decimal import Decimal
+from typing import Annotated
+import uuid
+from uuid import UUID
+
+from fastapi import Body, Depends, Query, status
+from fastapi.routing import APIRouter
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.application.get_daily_total import GetDailyDeliveryTotalService
+from app.application.parcel_service import ParcelService
+from app.infrastructure.database import get_db
+from app.infrastructure.orm.models import ParcelType
+from app.presentation.dependencies import (
+    get_daily_total_service,
+    get_parcel_service,
+    get_session_id,
+)
+from app.presentation.schemas.models import ParcelRequest, ParcelResponse, ParcelTypeResponse
+from app.presentation.schemas.parcel_query_params import ParcelQueryParams
+from app.tasks.celery_tasks import register_parcel_task
+from app.utils.exceptions import CustomException
+from app.utils.logger import logger
+
+parcelsroute = APIRouter()
+
+
+@parcelsroute.post("/parcels", response_model=UUID, status_code=status.HTTP_201_CREATED)
+async def register_parcel(
+    parcel_request: ParcelRequest, session_id: Annotated[str, Depends(get_session_id)]
+) -> UUID:
+    """
+    Позволяет зарегистрировать посылку
+    """
+    parcel_id = uuid.uuid4()
+    register_parcel_task.delay(session_id, parcel_id, parcel_request.model_dump())
+
+    logger.bind(parcel_id=parcel_id, session_id=session_id).info(
+        "Регистрация посылки поставлена в очередь"
+    )
+
+    return parcel_id
+
+
+@parcelsroute.get("/parcels", response_model=list[ParcelResponse], status_code=status.HTTP_200_OK)
+async def get_parcels(
+    session_id: Annotated[str, Depends(get_session_id)],
+    service: Annotated[ParcelService, Depends(get_parcel_service)],
+    params: Annotated[ParcelQueryParams, Query()],
+) -> list[ParcelResponse]:
+    """
+    Возвращает список посылок пользователя
+    """
+    parcels = await service.get_all(session_id, params)
+
+    return [ParcelResponse.model_validate(parcel) for parcel in parcels]
+
+
+@parcelsroute.get(
+    "/parcels/{parcel_id}", response_model=ParcelResponse, status_code=status.HTTP_200_OK
+)
+async def get_concrete_parcel(
+    parcel_id: UUID, service: Annotated[ParcelService, Depends(get_parcel_service)]
+) -> ParcelResponse:
+    """
+    Возвращает информацию о посылке по ее id
+    """
+    parcel = await service.get_one(parcel_id)
+    if parcel is None:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Посылки с таким id не существует"
+        )
+
+    return ParcelResponse.model_validate(parcel)
+
+
+@parcelsroute.patch(
+    "/parcels/{parcel_id}/company", response_model=ParcelResponse, status_code=status.HTTP_200_OK
+)
+async def add_delivery_parcel_company(
+    parcel_id: UUID,
+    company_id: Annotated[int, Body(embed=True, gt=0)],
+    service: Annotated[ParcelService, Depends(get_parcel_service)],
+) -> ParcelResponse:
+    """
+    Позволяет добавить id компании к посылке по ее id
+    """
+    parcel = await service.assign_company(parcel_id, company_id)
+    if parcel is None:
+        raise CustomException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Посылка уже закреплена за другой транспортной компанией",
+        )
+
+    return ParcelResponse.model_validate(parcel)
+
+
+@parcelsroute.get("/delivery_prices", response_model=Decimal, status_code=status.HTTP_200_OK)
+async def get_daily_delivery_total(
+    service: Annotated[GetDailyDeliveryTotalService, Depends(get_daily_total_service)],
+    parcel_type_id: Annotated[int, Query()],
+) -> Decimal:
+    """
+    Возвращает сумму стоимости всех доставок по типу посылки за последние 3 дня
+    """
+    total = await service.get(parcel_type_id)
+    if total is None:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Посылок с таким типом за последние 3 дня не найдено",
+        )
+
+    return total
+
+
+@parcelsroute.get(
+    "/parcels_types", response_model=list[ParcelTypeResponse], status_code=status.HTTP_200_OK
+)
+async def get_parcels_types(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[ParcelTypeResponse]:
+    """
+    Возвращает доступные типы посылок и их id
+    """
+    models = await session.scalars(select(ParcelType))
+    return [ParcelTypeResponse.model_validate(model) for model in models]

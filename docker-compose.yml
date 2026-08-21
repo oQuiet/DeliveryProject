@@ -1,0 +1,134 @@
+services:
+  migration:
+    build: .
+    image: delivery-app:dev
+    env_file:
+      - .env.docker
+    command: ["alembic", "-c", "/alembic.ini", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  app:
+    build: .
+    image: delivery-app:dev
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    volumes:
+      - logs-data:/src/logs
+    restart: unless-stopped
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgresql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    image: delivery-app:dev
+    env_file:
+      - .env.docker
+    restart:
+      unless-stopped
+    command:
+      ["celery", "-A", "app.infrastructure.celery_app:celery_app", "worker", "--loglevel=INFO"]
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build: .
+    image: delivery-app:dev
+    env_file:
+      - .env.docker
+    restart:
+      unless-stopped
+    command:
+      ["celery", "-A", "app.infrastructure.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgresql:
+    image: postgres:17
+    env_file:
+      - .env.docker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  mongodb:
+    image: mongo:8.3.8
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4.3.4
+    env_file:
+      - .env.docker
+    hostname: rabbitmq
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/30-celery-compat.conf:ro
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:8.8.1
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    
+volumes:
+  pgdata:
+  mongo-data:
+  mongo-config:
+  rabbitmq-data:
+  redis-data:
+  logs-data:
