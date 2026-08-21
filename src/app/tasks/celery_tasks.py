@@ -29,7 +29,7 @@ def register_parcel_task(session_id: str, parcel_id: str, data: dict) -> None:
 def update_currency_rate(self: Task) -> None:
     try:
         run_async(update_currency())
-        logger.info("Курс валюты обновлён")
+        logger.bind(beat="Celery_Beat").info("Курс доллара обновлён")
     except (aiohttp.ClientError, TimeoutError, RedisError) as exc:
         logger.bind(
             task_id=self.request.id,

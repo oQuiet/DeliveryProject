@@ -8,7 +8,7 @@ PositiveDecimal = Annotated[Decimal, Field(gt=0)]
 
 
 class ParcelRequest(BaseModel):
-    name: str = Field(max_length=255)
+    name: str = Field(max_length=255, min_length=1)
     weight: PositiveDecimal
     content_price_usd: PositiveDecimal
     parcel_type_id: int = Field(gt=0, lt=4)
